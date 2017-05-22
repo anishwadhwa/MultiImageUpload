@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements ProgressRequestBo
 
     @Override
     public void onProgressUpdate(int percentage) {
-
+        Log.d(TAG,"progress :" + percentage);
     }
 
     @Override
@@ -182,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements ProgressRequestBo
             File file = new File(uploadImages.get(i).getImagePath());
             ProgressRequestBody fileBody = new ProgressRequestBody(file, this);
             MultipartBody.Part filePart = MultipartBody.Part.createFormData("image", file.getName(), fileBody);
-            Call<JsonObject> request = retrofitInterface.uploadImage(filePart,"quicksell.images","uploads");
+            Call<JsonObject> request = retrofitInterface.uploadImage(filePart,"quicksell.images","uploads","abc" + i + ".jpg");
             request.enqueue(new Callback<JsonObject>() {
                 @Override
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {

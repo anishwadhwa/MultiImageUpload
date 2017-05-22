@@ -15,6 +15,7 @@ import retrofit2.http.Path;
 
 public interface WebServiceInterface {
     @Multipart
-    @POST("/{bucket}/{folder}")
-    Call<JsonObject> uploadImage(@Part MultipartBody.Part file, @Path("bucket") String bucket, @Path("folder") String folder);
+    @POST("/{bucket}/{folder}/{object}")
+    Call<JsonObject> uploadImage(@Part MultipartBody.Part file, @Path("bucket") String bucket, @Path("folder") String folder
+    ,@Path("object") String object);
 }

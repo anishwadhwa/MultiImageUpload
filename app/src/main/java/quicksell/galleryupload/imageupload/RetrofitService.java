@@ -20,13 +20,13 @@ public class RetrofitService {
         Retrofit.Builder builder =
                 new Retrofit.Builder()
                         .addConverterFactory(GsonConverterFactory.create())
-                        .baseUrl("https://s3.amazonaws.com/");
+                        .baseUrl("https://s3-ap-south-1.amazonaws.com");
 
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
         interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
             OkHttpClient client =
                     new OkHttpClient.Builder()
-                            .addInterceptor(interceptor).build();
+                            .build();
 
             builder.client(client);
 

@@ -20,7 +20,7 @@ public class ProgressRequestBody extends RequestBody {
     private String mPath;
     private UploadCallbacks mListener;
 
-    private static final int DEFAULT_BUFFER_SIZE = 100000;
+    private static final int DEFAULT_BUFFER_SIZE = 10000;
 
     public interface UploadCallbacks {
         void onProgressUpdate(int percentage);
