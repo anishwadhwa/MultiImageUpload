@@ -7,6 +7,7 @@ package quicksell.galleryupload.imageupload;
 public class UploadImage {
 
     String imagePath;
+    boolean isBeingUploaded;
     int progress;
 
     public String getImagePath() {
@@ -23,5 +24,13 @@ public class UploadImage {
 
     public void setProgress(int progress) {
         this.progress = progress;
+    }
+
+    public boolean isBeingUploaded() {
+        return isBeingUploaded;
+    }
+
+    public void setBeingUploaded(boolean beingUploaded) {
+        isBeingUploaded = beingUploaded;
     }
 }

@@ -38,6 +38,7 @@ public class ImagesAdapter extends RecyclerView.Adapter<ImagesAdapter.ViewHolder
         Bitmap myBitmap = BitmapFactory.decodeFile(images.get(position).getImagePath().replace("file://",""));
         holder.ivUploadImage.setImageBitmap(myBitmap);
         holder.ivUploadImage.setAdjustViewBounds(true);
+        holder.tvUploadProgress.setText(images.get(position).getProgress() + " % ");
     }
 
     @Override

@@ -24,9 +24,6 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferType;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.google.gson.JsonObject;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -34,19 +31,14 @@ import java.util.ArrayList;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import okhttp3.MultipartBody;
 import quicksell.galleryupload.Utils.S3Constants;
 import quicksell.galleryupload.Utils.S3Utils;
-import quicksell.galleryupload.Utils.SpaceItemDecorator;
 import quicksell.galleryupload.imageupload.ProgressRequestBody;
 import quicksell.galleryupload.imageupload.RetrofitService;
 import quicksell.galleryupload.imageupload.UploadImage;
 import quicksell.galleryupload.imageupload.WebServiceInterface;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity implements ProgressRequestBody.UploadCallbacks {
+public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.rv_images)
     RecyclerView rvImages;
@@ -59,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements ProgressRequestBo
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private TransferUtility transferUtility;
-    TransferObserver observer;
+    ArrayList<TransferObserver> observers;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,14 +64,7 @@ public class MainActivity extends AppCompatActivity implements ProgressRequestBo
         retrofitInterface = RetrofitService.getRetrofitClient();
 
         transferUtility = S3Utils.getTransferUtility(this);
-        observer = transferUtility.getTransfersWithType(TransferType.UPLOAD).get(0);
-        TransferListener listener = new UploadListener();
-        // Sets listeners to in progress transfers
-        if (TransferState.WAITING.equals(observer.getState())
-                || TransferState.WAITING_FOR_NETWORK.equals(observer.getState())
-                || TransferState.IN_PROGRESS.equals(observer.getState())) {
-            observer.setTransferListener(listener);
-        }
+        observers = (ArrayList<TransferObserver>)transferUtility.getTransfersWithType(TransferType.UPLOAD);
 
     }
 
@@ -93,15 +78,21 @@ public class MainActivity extends AppCompatActivity implements ProgressRequestBo
     /*
      * Begins to upload the file specified by the file path.
      */
-    private void beginUpload(String filePath) {
+    private void beginUpload(String filePath, int position) {
         if (filePath == null) {
             Toast.makeText(this, "Could not find the filepath of the selected file",
                     Toast.LENGTH_LONG).show();
             return;
         }
         File file = new File(filePath);
-        TransferObserver observer = transferUtility.upload(S3Constants.BUCKET_NAME, file.getName(),
-                file);
+        observers.set(position,transferUtility.upload(S3Constants.BUCKET_NAME, file.getName(),
+                file));
+
+        if (TransferState.WAITING.equals(observers.get(position).getState())
+                || TransferState.WAITING_FOR_NETWORK.equals(observers.get(position).getState())
+                || TransferState.IN_PROGRESS.equals(observers.get(position).getState())) {
+            observers.get(position).setTransferListener(new UploadListener());
+        }
         /*
          * Note that usually we set the transfer listener after initializing the
          * transfer. However it isn't required in this sample app. The flow is
@@ -134,21 +125,6 @@ public class MainActivity extends AppCompatActivity implements ProgressRequestBo
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         intent.setAction(Intent.ACTION_GET_CONTENT);
         startActivityForResult(intent, 1);
-    }
-
-    @Override
-    public void onProgressUpdate(int percentage) {
-        Log.d(TAG,"progress :" + percentage);
-    }
-
-    @Override
-    public void onError() {
-
-    }
-
-    @Override
-    public void onFinish() {
-
     }
 
     @Override
@@ -224,24 +200,8 @@ public class MainActivity extends AppCompatActivity implements ProgressRequestBo
 
     private void startUploadingImages() {
         for (int i =0; i < uploadImages.size(); i++) {
-//            File file = new File(uploadImages.get(i).getImagePath());
-
-            beginUpload(uploadImages.get(i).getImagePath());
-            /*ProgressRequestBody fileBody = new ProgressRequestBody(file, this);
-            MultipartBody.Part filePart = MultipartBody.Part.createFormData("image", file.getName(), fileBody);
-            Call<JsonObject> request = retrofitInterface.uploadImage(filePart,"quicksell.images","uploads","abc" + i + ".jpg");
-            request.enqueue(new Callback<JsonObject>() {
-                @Override
-                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                    Log.v(TAG, "uploaded");
-                }
-
-                @Override
-                public void onFailure(Call<JsonObject> call, Throwable t) {
-                    Log.v(TAG, "upload failed :" );
-                    t.printStackTrace();
-                }
-            });*/
+            uploadImages.get(i).setBeingUploaded(true);
+            beginUpload(uploadImages.get(i).getImagePath(), i);
         }
     }
 
@@ -301,6 +261,11 @@ public class MainActivity extends AppCompatActivity implements ProgressRequestBo
         public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
             Log.d(TAG, String.format("onProgressChanged: %d, total: %d, current: %d",
                     id, bytesTotal, bytesCurrent));
+            for (TransferObserver observer : observers) {
+                if(observer.getId() == id){
+                    updateProgress(observer);
+                }
+            }
         }
 
         @Override
@@ -309,14 +274,11 @@ public class MainActivity extends AppCompatActivity implements ProgressRequestBo
         }
     }
 
-    // Initialize the Amazon Cognito credentials provider
-    /*CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
-            getApplicationContext(),
-            "ap-south-1:3ebcfe7b-ef61-4ff4-9a67-ea9baa020a14", // Identity Pool ID
-            Regions.AP_SOUTH_1 // Region
-            /storage/emulated/0/DCIM/Screenshots/Screenshot_2017-04-12-09-23-03-002_com.android.chrome.png
-            /storage/emulated/0/DCIM/Screenshots/Screenshot_2017-05-19-22-42-17-926_com.linkedin.android.png
-
-
-    );*/
+    private void updateProgress(TransferObserver observer) {
+        int position = observers.indexOf(observer);
+        int progress = (int) ((double) observer.getBytesTransferred() * 100 / observer
+                .getBytesTotal());
+        uploadImages.get(position).setProgress(progress);
+        imagesAdapter.notifyDataSetChanged();
+    }
 }
