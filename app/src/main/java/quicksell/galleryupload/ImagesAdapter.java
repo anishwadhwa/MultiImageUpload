@@ -39,6 +39,9 @@ public class ImagesAdapter extends RecyclerView.Adapter<ImagesAdapter.ViewHolder
         holder.ivUploadImage.setImageBitmap(myBitmap);
         holder.ivUploadImage.setAdjustViewBounds(true);
         holder.tvUploadProgress.setText(images.get(position).getProgress() + " % ");
+        if(images.get(position).getProgress()>=100){
+            holder.vTransparency.setVisibility(View.GONE);
+        }
     }
 
     @Override

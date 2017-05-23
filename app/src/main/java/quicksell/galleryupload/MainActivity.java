@@ -281,4 +281,14 @@ public class MainActivity extends AppCompatActivity {
         uploadImages.get(position).setProgress(progress);
         imagesAdapter.notifyDataSetChanged();
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (observers != null && !observers.isEmpty()) {
+            for (TransferObserver observer : observers) {
+                observer.cleanTransferListener();
+            }
+        }
+    }
 }
